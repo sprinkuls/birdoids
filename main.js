@@ -33,11 +33,18 @@ function update(delta) {
         e.pos.y += e.vel.y * delta;
 
         // stupid lazy hack O(n^2) way to find nearby birds
+        // this is a bit race-condition-y in that one bird could be in range of another at one point in this update
+        // loop, but then later move and no longer be in range. ultimately things should work out, since later
+        // distance checks will be following later movements, and things are being added pairwise
         for (const f of birds) {
             let distTo = Math.sqrt(Math.pow(e.pos.x - f.pos.x, 2) + Math.pow(e.pos.y - f.pos.y, 2));
 
             if (distTo <= 100 && !Object.is(e,f)) {
-                e.friends.push(f);
+                e.friends.add(f);
+                f.friends.add(e);
+            } else {
+                e.friends.delete(f);
+                e.friends.delete(e);
             }
         }
     }
@@ -86,7 +93,7 @@ function makeBird(x, y, vx, vy) {
         //vel: {x: (Math.random()-0.5)*20, y: (Math.random()-0.5)*20}, // fun random motion
         vel: {x: (Math.random()-0.5)*40, y: (Math.random()-0.5)*40}, // fun random motion
         // add accel??
-        friends: [],
+        friends: new Set(),
         radius: 3 + Math.random() * 3,
         color: `hsl(${Math.random() * 60 + 200},50%,60%)`,
         opacity: 0.5,
