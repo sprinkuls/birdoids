@@ -31,6 +31,15 @@ function update(delta) {
 
         e.pos.x += e.vel.x * delta;
         e.pos.y += e.vel.y * delta;
+
+        // stupid lazy hack O(n^2) way to find nearby birds
+        for (const f of birds) {
+            let distTo = Math.sqrt(Math.pow(e.pos.x - f.pos.x, 2) + Math.pow(e.pos.y - f.pos.y, 2));
+
+            if (distTo <= 100 && !Object.is(e,f)) {
+                e.friends.push(f);
+            }
+        }
     }
 }
 
@@ -56,7 +65,6 @@ function draw(ctx) {
         ctx.lineTo(e.pos.x + (Math.cos(theta)*magnitude), e.pos.y + (Math.sin(theta)*magnitude));
         ctx.stroke();
 
-        /*
         // draw lines to my friends
         for (const f of e.friends) {
             ctx.beginPath();
@@ -67,18 +75,18 @@ function draw(ctx) {
             ctx.lineTo(f.pos.x, f.pos.y);
             ctx.stroke();
         }
-        */
     }
     ctx.globalAlpha = 1;
 }
 
-function makeDot(x, y, vx, vy) {
+function makeBird(x, y, vx, vy) {
     return {
         pos: {x, y},
         //vel: {x: vx, y: vy},
         //vel: {x: (Math.random()-0.5)*20, y: (Math.random()-0.5)*20}, // fun random motion
-        vel: {x: (Math.random()-0.5)*20, y: (Math.random()-0.5)*20}, // fun random motion
+        vel: {x: (Math.random()-0.5)*40, y: (Math.random()-0.5)*40}, // fun random motion
         // add accel??
+        friends: [],
         radius: 3 + Math.random() * 3,
         color: `hsl(${Math.random() * 60 + 200},50%,60%)`,
         opacity: 0.5,
@@ -93,7 +101,7 @@ function makeGrid(w, h, density=50) {
         for (let j = 0; j <= density; j++) {
             let x = (i/density) * w;
             let y = (j/density) * h;
-            arr.push(makeDot(x, y, 0, 0, true));
+            arr.push(makeBird(x, y, 0, 0, true));
         }
     }
     return arr;
