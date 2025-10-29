@@ -30,12 +30,6 @@ function update(delta) {
             e.vel.y = -e.vel.y;
         }
 
-
-        // update velocity
-        //e.vel.x += e.acc.x * delta;
-        //e.vel.y += e.acc.y * delta;
-
-
         // stupid lazy hack O(n^2) way to find nearby birds
         // find what birds are nearby
         // massive TODO, need an actually efficient way to get this info
@@ -51,24 +45,46 @@ function update(delta) {
             }
         }
 
-        //
+        // only
         if (e.friends.size > 0) {
+            const accelMag = 40;
+
             // BEHAVIOR 1: ALIGNMENT
+            // aim this bird in the avg. direction of friends
+            let b1 = {};
             const friendVelocities = Array.from(e.friends).map(obj => obj.vel);
             const friendThetas = friendVelocities.map(vel => Math.atan2(vel.y, vel.x)); // in radians!
             const avgTheta = friendThetas.reduce((partial, x) => (partial + x), 0) / friendThetas.length;
-            // aim my accel in that direction
-            // use current accel's magnitude? and then would allow it to later be offset by repulsion.. yah
-            //const accelMag = Math.sqrt(Math.pow(e.acc.x, 2) + Math.pow(e.acc.y, 2));
-            const accelMag = 40;
-            e.acc.x = Math.cos(avgTheta)*accelMag;
-            e.acc.y = Math.sin(avgTheta)*accelMag;
 
-            //e.vel.x += Math.cos(avgTheta)*accelMag/10;
-            //e.vel.y += Math.sin(avgTheta)*accelMag/10;
-            //console.log('e')
+            b1.x = Math.cos(avgTheta)*accelMag;
+            b1.y = Math.sin(avgTheta)*accelMag;
+
+            // BEHAVIOR 2: COHESION
+            // aim toward the center of friends; find the average x/y pos of friends,
+            // then find the angle to it, then accelerate toward it
+            let b2 = {};
+            const friendX = Array.from(e.friends).map(obj => obj.pos.x);
+            const friendY = Array.from(e.friends).map(obj => obj.pos.y);
+            const avgX = friendX.reduce((partial, x) => (partial + x), 0) / friendX.length;
+            const avgY = friendY.reduce((partial, x) => (partial + x), 0) / friendY.length;
+            const angleToCenter = Math.atan2(avgY - e.pos.y, avgX - e.pos.x);
+
+            b2.x = Math.cos(angleToCenter)*accelMag;
+            b2.y = Math.sin(angleToCenter)*accelMag;
+
+            // BEHAVIOR 3: SEPARATION
+            // avoid colliding with friends
+            let b3 = {};
+
+            // AVERAGE THE BEHAVIORS
+            // TODO: actually do that. currently like this for testing
+            e.acc.x = (b1.x + b2.x) / 2.0;
+            e.acc.y = (b1.y + b2.y) / 2.0;
+            //e.acc.x = b2.x;
+            //e.acc.y = b2.y;
         }
 
+        // clamp velocity to +/- 30
         e.vel.x = Math.min(Math.max(e.vel.x + e.acc.x * delta, -30), 30);
         e.vel.y = Math.min(Math.max(e.vel.y + e.acc.y * delta, -30), 30);
 
